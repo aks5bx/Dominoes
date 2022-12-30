@@ -52,16 +52,16 @@ class Player():
         self.player_num = player_num
         self.train_queue = []
 
-    def info(self, all_dominoes=False):
+    def info(self, all_dominoes=False, verbose=False):
         d_lst = self.domino_list
 
-        if all_dominoes:
+        if all_dominoes and verbose:
             print('My Dominoes: ')
             for d in d_lst:
                 print(d)
             print('--' * 25)
 
-        else:
+        elif not all_dominoes and verbose:
             print('--' * 25)   
             print('Number of dominoes: ', self.num_of_dominoes)
             print('Currently Playing?  ', self.game is not None)
@@ -100,6 +100,10 @@ class Player():
 
     def draw(self):
         new_dominoes_lst = self.game.deal_to_one(1)
+
+        if len(new_dominoes_lst) == 0:
+            return None 
+
         self.domino_list += [new_dominoes_lst[0]]
         return new_dominoes_lst[0]
 
@@ -121,7 +125,7 @@ class Player():
         '''
 
         G = nx.DiGraph()
-        start_domino = self.game.train_dict[self.player_num][0][0]
+        start_domino = self.game.train_dict[self.player_num][0][-1]
         
         dominoes = [start_domino] + dominoes
 
@@ -154,7 +158,7 @@ class Player():
                 longest_cycle = [train_domino]
                     
         self.train_queue = longest_cycle
-        
+        print('Longest Cycle : ', longest_cycle)
         return longest_cycle
 
     def play_my_train(self):
@@ -168,7 +172,7 @@ class Player():
     def play_highest_domino(self):
         sorted_dominoes = self.sort_dominoes()
         for big_domino in sorted_dominoes:
-            for train_num in range(1, self.game.num_players + 1):
+            for train_num in range(0, self.game.num_players + 1):
                 if train_num == self.player_num:
                     continue
                 else:
@@ -184,7 +188,7 @@ class Player():
         return 0, None, None 
 
     def play_drawn_domino(self, drawn):
-        for train_num in range(1, self.game.num_players + 1):
+        for train_num in range(0, self.game.num_players + 1):
             if train_num == self.player_num:
                 continue
             else:
@@ -224,14 +228,14 @@ class Player():
             if attempt1 == 1:
                 play_result = 1
                 print('Played ', play_domino, ' on my train')
-            else:
-                print('Could not play my train, trying another train')
-                play_result, played_domino , played_train = self.play_highest_domino()
-                if play_result == 1:
-                    print('Played on another train: ', played_domino, ' on train ', played_train)
+        elif my_train:
+            print('Could not play my train, trying another train')
+            play_result, played_domino , played_train = self.play_highest_domino()
+            if play_result == 1:
+                print('Played on another train: ', played_domino, ' on train ', played_train)
 
         ## Priority is to play on another train
-        if not my_train and highest_domino:
+        if (not my_train) and highest_domino:
             play_result, played_domino, train_num = self.play_highest_domino()
             if play_result == 1:
                 print('Played on another train: ', played_domino, ' on train ', train_num)
@@ -242,22 +246,31 @@ class Player():
         if play_result < 1:
             print('Could not play on another train OR my train...drawing a domino')
             drawn_domino = self.draw()
-            print('Drew a domino')
-            play_result, played_domino, train_num = self.play_drawn_domino(drawn_domino)
-            if play_result == 1:
-                print('Played drawn domino on train: ', train_num)
+            if drawn_domino is not None:
+                print('Drew a domino ', drawn_domino)
+                play_result, played_domino, train_num = self.play_drawn_domino(drawn_domino)
+                if play_result == 1:
+                    print('Played drawn domino on train: ', train_num)
+                else:
+                    print('')
+                    print('Could not play drawn domino on any train - setting it to public')
+                    self.game.train_dict[self.player_num] = (self.game.train_dict[self.player_num][0], True)
             else:
-                print('')
-                print('Could not play drawn domino on any train - setting it to public')
-                self.game.train_dict[self.player_num] = (self.game.train_dict[self.player_num][0], True)
+                print('No more dominoes to draw...passing turn')
 
         print('')
         print('TURN COMPLETE')
         print('')
         print('>>>> End Turn: My Dominoes <<<<')
-        print(self.domino_list)        
+        print(len(self.domino_list))
         print('--' * 25)   
         print('--' * 25)
+
+        if len(self.domino_list) == 0:
+            print('Player ', self.player_num, ' has won the round!')
+            return 1
+        else:
+            return 0 
 
        
 class GamePlay():
@@ -338,11 +351,33 @@ class Game():
             if player_num == 1:
                 continue
             else:
-                self.players[player_num].play_turn(CPU=True)
+                result = self.players[player_num].play_turn(CPU=True)
+                if result == 1:
+                    print('Player ', player_num, ' has won the round!')
+                    return 1
+
+        return 0         
 
     def play_round(self):
-        self.my_player.play_turn()
-        self.make_turn_CPUs()
+        keep_playing = True 
+        while keep_playing: 
+            result = self.my_player.play_turn()
+            if result == 1:
+                keep_playing = False
+            else:
+                result = self.make_turn_CPUs()
+                if result == 1:
+                    keep_playing = False
+            
+            self.current_state(True)
+
+
+    def next_round(self):
+        self.current_round += 1
+        self.gameplay_round = GamePlay(self.num_players, self.current_round)
+        for player_num in self.players.keys():
+            self.players[player_num].join_game(self.gameplay_round)
+            self.players[player_num].add_dominoes(self.gameplay_round.deal_to_one(self.nd))
 
     def score(self, show = True):
         for player_num in self.score_dict.keys():            
@@ -360,7 +395,7 @@ class Game():
 
         return self.score_dict[1]
 
-    def current_state(self):
+    def current_state(self, trains = False):
         print('')
         print('--' * 25)
         print('--' * 25)
@@ -369,17 +404,18 @@ class Game():
 
         print('Current Round: ', self.current_round)
         print('')
-        print('Current Train Statuses: ')
-        for train_num in range(1, self.num_players + 1):
-            if train_num == self.my_player.player_num:
-                print('*MY* Train ', train_num, ' tail: ', self.gameplay_round.train_dict[train_num][0][-1])
-            else:
-                print('Train ', train_num, ' tail: ', self.gameplay_round.train_dict[train_num][0][-1])
+        if trains:
+            print('Current Train Statuses: ')
+            for train_num in range(0, self.num_players + 1):
+                if train_num == self.my_player.player_num:
+                    print('*MY* Train ', train_num, ' tail: ', self.gameplay_round.train_dict[train_num][0][-1])
+                else:
+                    print('Train ', train_num, ' tail: ', self.gameplay_round.train_dict[train_num][0][-1])
 
-        print('')
+            print('')
 
         print('My Player')
-        print('Dominoes Left :', self.my_player.num_of_dominoes)
+        print('Dominoes Left :', len(self.my_player.domino_list))
         print('--' * 25)
         print('--' * 25)
 
@@ -388,22 +424,23 @@ def pipeline():
     game.add_CPU(2)
     game.add_CPU(3)
     game.add_CPU(4) 
+
     game.play_round()
-    
     my_score = game.score()
 
     return my_score
 
 
 def main():
-    game = Game(4, 12)
+    game = Game(6, 12)
     game.add_CPU(2)
     game.add_CPU(3)
     game.add_CPU(4)
-    game.current_state()
+    game.add_CPU(5)
+    game.add_CPU(6)
+    game.current_state(trains = True)
     game.play_round()
-    game.current_state()
-    game.score()
+    my_score = game.score()
 
 
 if __name__ == '__main__':
