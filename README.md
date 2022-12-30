@@ -89,4 +89,9 @@ The challenge here is for our program to learn when to choose which strategy.
 We want to give our program information on the status of the game in order to allow it to make an informed decision. However, we want to localize this information to information that a player would reasonably know during the course of the game (we do not, for example, implement "counting dominoes").
 
 We equip our program with the following information: 
-- 
+- Number of dominoes it has left 
+- Number of dominoes the player in the lead (lead as in fewest number of dominoes left) has 
+- Total point value of dominoes it has left 
+- Whether it is in the lead 
+- Whether its train is public 
+- Current round number 
