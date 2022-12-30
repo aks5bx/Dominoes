@@ -8,7 +8,15 @@ So, this repository contains my attempt to create a program (you can call it AI,
 
 ## Repository Setup 
 
+### Structure 
 - I define classes and objects in `domino.py`
+- I define neural network structures in `domino_bot.py`
+
+### Environment 
+
+_I use Python Version 3.8.2_
+
+The required packages can be installed using `pip install -r requirements.txt`
 
 ## Domino Classes and Objects
 
