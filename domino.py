@@ -201,11 +201,14 @@ class Player():
             return 0, None, None
 
 
-    def play_turn(self, my_train = True, highest_domino = False):
+    def play_turn(self, my_train = True, highest_domino = False, CPU = False):
         print('')
         print('--' * 25)
         print('--' * 25)
-        print('MY TURN')
+        if not CPU:
+            print('MY TURN')
+        else:
+            print('CPU ', self.player_num, ' TURN')
         print('')
 
         print('>>>> Start Turn: My Dominoes <<<<')
@@ -297,12 +300,14 @@ class GamePlay():
 
     
 class Game():
-    def __init__(self, num_players, num_dominoes):
+    def __init__(self, num_players, num_dominoes, current_round=1):
         ## Params
+        self.nd = num_dominoes
         self.num_players = num_players
-        self.current_round = 1
+        self.current_round = current_round
         self.gameplay_round = GamePlay(num_players, self.current_round)
         self.my_player = Player(None, 1)
+        self.players = {1 : self.my_player}
 
         ## Gameplay Setup
         my_dominoes = self.gameplay_round.deal_to_one(num_dominoes)
@@ -314,6 +319,46 @@ class Game():
         print('--' * 25)
         print('SETUP COMPLETE')
         print('--' * 25)
+
+    def add_CPU(self, player_num):
+        if len(self.players.keys()) == self.num_players:
+            print('Max players reached')
+            return
+
+        player = Player(None, player_num)
+        player.join_game(self.gameplay_round)
+        player.add_dominoes(self.gameplay_round.deal_to_one(self.nd))
+        self.players[player_num] = player
+
+        print('Added Player ', player_num, ' to the game')
+
+    def make_turn_CPUs(self):
+        for player_num in self.players.keys():
+            if player_num == 1:
+                continue
+            else:
+                self.players[player_num].play_turn(CPU=True)
+
+    def make_round(self):
+        self.my_player.play_turn()
+        self.make_turn_CPUs()
+
+
+    def score(self, show = True):
+        score_dict = {}
+        for player_num in self.players.keys():
+            dominoes_left = self.players[player_num].domino_list
+            points_left = 0
+            for domino in dominoes_left:
+                points_left += domino.total
+
+            score_dict[player_num] = points_left 
+
+        if show:
+            print('SCORES')
+            for player_num in score_dict.keys():
+                print('Player ', player_num, ' : ', score_dict[player_num])
+
 
     def current_state(self):
         print('')
@@ -340,9 +385,14 @@ class Game():
 
 def main():
     game = Game(4, 12)
+    game.add_CPU(2)
+    game.add_CPU(3)
+    game.add_CPU(4)
     game.current_state()
-    game.my_player.play_turn()
+    game.make_round()
     game.current_state()
+    game.score()
+
 
 
 if __name__ == '__main__':
