@@ -65,3 +65,28 @@ def main():
     game.current_state()
     game.score()
 ```
+
+## Learning 
+
+### Levers to Pull 
+
+When setting up a learning mechanism, I first had to define the options that my program could learn to optimize. I settled on the following options and I include a brief explanation for why each was chose. 
+
+#### Play Train: Mine or Others 
+
+The first option is whether to prioritize playing on your train on playing on someone else's train (if you can). Intuitively, if you train is public, you should probably play on your train if you can (to turn it back to private). Otherwise, you may as well play on someone else's train (if you can) and retain the option to play on your train for later. 
+
+Of course, this is all intuition that we hope our program can learn from repitition. 
+
+#### Build Train: Longest or Heaviest 
+
+The other major option comes when we actually conceptualize our train. We can either prioritize building the longest train we can OR we can prioritize building the "heaviest" train (the train that carries the most total points). Prioritizing the longest train reduces the expected value of the number of times you will have to draw a new tile (because you are instead playing tiles yourself). However, prioritizing the heaviest train ensures that if you don't win, you have at least gotten rid of points that would otherwise count against you. 
+
+The challenge here is for our program to learn when to choose which strategy. 
+
+### Inputs 
+
+We want to give our program information on the status of the game in order to allow it to make an informed decision. However, we want to localize this information to information that a player would reasonably know during the course of the game (we do not, for example, implement "counting dominoes").
+
+We equip our program with the following information: 
+- 
