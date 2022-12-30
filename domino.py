@@ -1,6 +1,5 @@
 import pandas as pd 
 import numpy as np 
-import torch 
 import random 
 import networkx as nx 
 
@@ -249,7 +248,8 @@ class Player():
                 print('Played drawn domino on train: ', train_num)
             else:
                 print('')
-                print('Could not play drawn domino on any train')
+                print('Could not play drawn domino on any train - setting it to public')
+                self.game.train_dict[self.player_num] = (self.game.train_dict[self.player_num][0], True)
 
         print('')
         print('TURN COMPLETE')
@@ -308,7 +308,7 @@ class Game():
         self.gameplay_round = GamePlay(num_players, self.current_round)
         self.my_player = Player(None, 1)
         self.players = {1 : self.my_player}
-
+        self.score_dict = {1: 0}
         ## Gameplay Setup
         my_dominoes = self.gameplay_round.deal_to_one(num_dominoes)
 
@@ -329,6 +329,7 @@ class Game():
         player.join_game(self.gameplay_round)
         player.add_dominoes(self.gameplay_round.deal_to_one(self.nd))
         self.players[player_num] = player
+        self.score_dict[player_num] = 0
 
         print('Added Player ', player_num, ' to the game')
 
@@ -339,26 +340,25 @@ class Game():
             else:
                 self.players[player_num].play_turn(CPU=True)
 
-    def make_round(self):
+    def play_round(self):
         self.my_player.play_turn()
         self.make_turn_CPUs()
 
-
     def score(self, show = True):
-        score_dict = {}
-        for player_num in self.players.keys():
+        for player_num in self.score_dict.keys():            
             dominoes_left = self.players[player_num].domino_list
             points_left = 0
             for domino in dominoes_left:
                 points_left += domino.total
 
-            score_dict[player_num] = points_left 
+            self.score_dict[player_num] += points_left 
 
         if show:
             print('SCORES')
-            for player_num in score_dict.keys():
-                print('Player ', player_num, ' : ', score_dict[player_num])
+            for player_num in self.score_dict.keys():
+                print('Player ', player_num, ' : ', self.score_dict[player_num])
 
+        return self.score_dict[1]
 
     def current_state(self):
         print('')
@@ -383,16 +383,27 @@ class Game():
         print('--' * 25)
         print('--' * 25)
 
+def pipeline():
+    game = Game(4, 12)
+    game.add_CPU(2)
+    game.add_CPU(3)
+    game.add_CPU(4) 
+    game.play_round()
+    
+    my_score = game.score()
+
+    return my_score
+
+
 def main():
     game = Game(4, 12)
     game.add_CPU(2)
     game.add_CPU(3)
     game.add_CPU(4)
     game.current_state()
-    game.make_round()
+    game.play_round()
     game.current_state()
     game.score()
-
 
 
 if __name__ == '__main__':
