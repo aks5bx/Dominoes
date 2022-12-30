@@ -41,3 +41,19 @@ The class `GamePlay` defines the necessary objects to keep track of for a single
 
 The class `Game` is responsible for keeping track of the game writ large. Notably, while the class `GamePlay` handles the active changes to a single round, the class `Game` is primarily responsible for keeping track of meta-game information. This chiefly includes: 
 - `score_dict` (dict): dictionary of scores in the format `{player_num : score (int)}`
+
+## Simple Testing 
+
+In order to ensure that multi-player functionality works properly, I include a brief test in the `main()` method within `domino.py`. The method is included below. Note that the randomness of the dealing will create a unique game each time the py file is run. 
+
+```
+def main():
+    game = Game(4, 12)
+    game.add_CPU(2)
+    game.add_CPU(3)
+    game.add_CPU(4)
+    game.current_state()
+    game.make_round()
+    game.current_state()
+    game.score()
+```
