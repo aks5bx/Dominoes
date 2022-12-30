@@ -10,7 +10,7 @@ So, this repository contains my attempt to create a program (you can call it AI,
 
 - I define classes and objects in `domino.py`
 
-## Domino Class
+## Domino Classes and Objects
 
 ### Domino 
 
