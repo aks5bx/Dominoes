@@ -52,12 +52,20 @@ class Player():
         self.player_num = player_num
         self.train_queue = []
 
-    def info(self):
+    def info(self, all_dominoes=False):
         d_lst = self.domino_list
-        print('--' * 25)   
-        print('Number of dominoes: ', self.num_of_dominoes)
-        print('Currently Playing?  ', self.game is not None)
-        print('--' * 25)   
+
+        if all_dominoes:
+            print('My Dominoes: ')
+            for d in d_lst:
+                print(d)
+            print('--' * 25)
+
+        else:
+            print('--' * 25)   
+            print('Number of dominoes: ', self.num_of_dominoes)
+            print('Currently Playing?  ', self.game is not None)
+            print('--' * 25)   
 
     def join_game(self, gameplay):
         self.game = gameplay
@@ -69,7 +77,7 @@ class Player():
     def valid_play(self, play_domino, train_num):
         if self.game.train_dict[train_num][1] == False and self.player_num != train_num:
             return False
-        elif self.game.train_dict[train_num][0][-1][1] != play_domino.top:
+        elif self.game.train_dict[train_num][0][-1].bottom != play_domino.top:
             return False 
         else:
             return True 
@@ -83,7 +91,7 @@ class Player():
 
             # if you play on your own train, your train is private 
             if self.player_num == train_num:
-                self.game.train_dict[train_num][1] = False
+                self.game.train_dict[train_num] = (self.game.train_dict[train_num][0], False)
 
             return 1 
 
@@ -111,6 +119,12 @@ class Player():
         INPUT: dominoes - list of type Domino 
         OUTPUT: longest train - list of type Domino 
         '''
+
+'''
+TO DO: this must be directed!! 
+'''
+
+
 
         # Create a graph where each domino is a node, and edges connect dominoes that can be chained together
         graph = {}
@@ -141,12 +155,18 @@ class Player():
             if len(train) > len(longest_train):
                 longest_train = train
 
+        longest_train.reverse()
         self.train_queue = longest_train
+
         return longest_train
 
     def play_my_train(self):
         train_num = self.player_num
         play_domino = self.train_queue.pop(0)
+
+        print('Play my train :', self.train_queue)
+        print('Play my train :', play_domino)
+        print('Play my train :', train_num)
 
         play_attempt = self.play_domino(play_domino, train_num)
 
@@ -189,6 +209,7 @@ class Player():
 
     def play_turn(self, my_train = True, highest_domino = False):
         play_result = -1
+        self.make_train(self.domino_list)
 
         ## Priority is to play on your own train
         if my_train and len(self.train_queue) > 0: 
@@ -198,7 +219,9 @@ class Player():
                 print('Played on my train')
             else:
                 print('Could not play my train, trying another train')
-                play_result = self.play_highest_domino()
+                play_result, played_domino , played_train = self.play_highest_domino()
+                if play_result == 1:
+                    print('Played on another train: ', played_domino, ' on train ', played_train)
 
         ## Find another train 
         if not my_train and highest_domino:
@@ -215,9 +238,10 @@ class Player():
             print('Drew a domino')
             play_result, played_domino, train_num = self.play_drawn_domino(drawn_domino)
             if play_result == 1:
-                print('Played drawn dmoino on train: ', train_num)
+                print('Played drawn domino on train: ', train_num)
             else:
                 print('Could not play drawn domino on any train')
+                self.info(True)
             
        
 class GamePlay():
@@ -228,7 +252,7 @@ class GamePlay():
         start_domino = Domino(self.domino_round, self.domino_round)
         self.pool = []
         for top_num in range(13):
-            for bottom_num in range(top_num, 13):
+            for bottom_num in range(13):
                 if top_num == self.domino_round and bottom_num == self.domino_round:
                     continue
                 domino_add = Domino(top_num, bottom_num)
@@ -298,7 +322,7 @@ class Game():
         print('--' * 25)
 
 def main():
-    game = Game(4, 7)
+    game = Game(4, 12)
     game.current_state()
 
     game.my_player.play_turn()
